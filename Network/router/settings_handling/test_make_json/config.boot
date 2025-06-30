@@ -1,0 +1,1409 @@
+firewall {
+    all-ping enable
+    broadcast-ping disable
+    group {
+        network-group GUEST {
+            description "Guest-V200, PointOfSaleAuxGuest-V14"
+            network 10.200.112.0/20
+            network 192.168.14.0/29
+        }
+        network-group KCA {
+            description KCA
+            network 10.30.24.0/21
+        }
+        network-group LOCAL {
+            description "Eth2-StreamingPC, LAN_ALL, OfficeMain-V100, OfficeTelephone-V101,Production-V30, PointOfSale-V15, OpenWRT_WAPs-V16"
+            network 192.168.2.0/26
+            network 192.168.5.0/24
+            network 192.168.10.0/24
+            network 192.168.101.0/27
+            network 192.168.30.0/23
+            network 192.168.15.0/29
+            network 192.168.16.0/29
+        }
+        network-group network {
+            description ""
+        }
+    }
+    ipv6-receive-redirects disable
+    ipv6-src-route disable
+    ip-src-route disable
+    log-martians enable
+    modify balance {
+        rule 10 {
+            action modify
+            destination {
+                group {
+                    network-group KCA
+                }
+            }
+            modify {
+                table main
+            }
+        }
+        rule 20 {
+            action modify
+            destination {
+                group {
+                    address-group ADDRv4_eth0
+                }
+            }
+            modify {
+                table main
+            }
+        }
+        rule 30 {
+            action modify
+            destination {
+                group {
+                    address-group ADDRv4_eth1
+                }
+            }
+            modify {
+                table main
+            }
+        }
+        rule 110 {
+            action modify
+            modify {
+                lb-group G
+            }
+        }
+    }
+    name Atarashii_to_LOCAL {
+        default-action drop
+        description "Atarashii_to_LOCAL_RTR (LOCAL)"
+        rule 10 {
+            action accept
+            description Established
+            log disable
+            protocol all
+            state {
+                established enable
+                invalid disable
+                new disable
+                related enable
+            }
+        }
+        rule 20 {
+            action accept
+            description "Allow DNS"
+            destination {
+                port 53
+            }
+            log enable
+            protocol tcp_udp
+        }
+        rule 30 {
+            action accept
+            description "Allow DHCP"
+            destination {
+                port 67
+            }
+            log enable
+            protocol udp
+        }
+        rule 31 {
+            action accept
+            description "Allow NTP"
+            destination {
+                port 123
+            }
+            log disable
+            protocol udp
+        }
+    }
+    name Atarashii_to_OTHER_VLANs {
+        default-action accept
+        description "Atarashii_to_OTHER_VLANs (IN)"
+        rule 1 {
+            action accept
+            description Established
+            log enable
+            protocol all
+            state {
+                established enable
+                invalid disable
+                new disable
+                related enable
+            }
+        }
+        rule 2 {
+            action drop
+            description NetworkGroup
+            destination {
+                group {
+                    network-group LOCAL
+                }
+            }
+            log disable
+            protocol all
+        }
+        rule 3 {
+            action drop
+            application {
+                category TopSites-Adult
+            }
+            description "KCA - Block Bad sites"
+            log disable
+            protocol ah
+        }
+    }
+    name Block_Bad_Sites {
+        default-action accept
+        description ""
+        rule 1 {
+            action drop
+            application {
+                category TopSites-Adult
+            }
+            description Block_Top_Adult
+            disable
+            log disable
+            protocol all
+        }
+    }
+    name GUEST_to_LOCAL {
+        default-action drop
+        description "From Guest (guest to router)"
+        enable-default-log
+        rule 1 {
+            action accept
+            description "allow DNS"
+            destination {
+                port 53
+            }
+            log disable
+            protocol tcp_udp
+        }
+        rule 2 {
+            action accept
+            description "allow DHCP"
+            destination {
+                port 67
+            }
+            log enable
+            protocol tcp_udp
+        }
+        rule 3 {
+            action accept
+            description "allow Unifi Controller http Captive Portal (port 8880)"
+            destination {
+                address 192.168.5.49-192.168.5.50
+                port 8880
+            }
+            log disable
+            protocol tcp
+        }
+        rule 4 {
+            action accept
+            description "allow Unifi Controller https Captive Portal (port 8843)"
+            destination {
+                address 192.168.5.49-192.168.5.50
+                port 8843
+            }
+            log disable
+            protocol tcp
+        }
+        rule 5 {
+            action accept
+            description "allow Unifi Controller Speed Test (port 6789)"
+            destination {
+                address 192.168.5.49-192.168.5.50
+                port 6789
+            }
+            log disable
+            protocol tcp
+        }
+    }
+    name GUEST_to_OTHER_VLANs__IN {
+        default-action accept
+        description "GUEST_to_OTHER_VLANs (IN)"
+        rule 1 {
+            action accept
+            description Established
+            log enable
+            protocol all
+            state {
+                established enable
+                invalid disable
+                new disable
+                related enable
+            }
+        }
+        rule 2 {
+            action drop
+            description NetworkGroup
+            destination {
+                group {
+                    network-group LOCAL
+                }
+            }
+            log disable
+            protocol all
+        }
+        rule 3 {
+            action drop
+            description "GUEST - Block Bad sites"
+            log disable
+            protocol ah
+        }
+    }
+    name HVAC_to_LOCAL {
+        default-action drop
+        description "HVAC_to_LOCAL_RTR (LOCAL)"
+        rule 10 {
+            action accept
+            description Established
+            log disable
+            protocol all
+            state {
+                established enable
+                invalid disable
+                new disable
+                related enable
+            }
+        }
+        rule 20 {
+            action accept
+            description "Allow DNS"
+            destination {
+                port 53
+            }
+            log enable
+            protocol tcp_udp
+        }
+        rule 30 {
+            action accept
+            description "Allow DHCP"
+            destination {
+                port 67
+            }
+            log enable
+            protocol udp
+        }
+        rule 31 {
+            action accept
+            description "Allow NTP"
+            destination {
+                port 123
+            }
+            log disable
+            protocol udp
+        }
+    }
+    name HVAC_to_OTHER_VLANs {
+        default-action accept
+        description "HVAC_to_OTHER_VLANs (IN)"
+        rule 1 {
+            action accept
+            description Established
+            log enable
+            protocol all
+            state {
+                established enable
+                invalid disable
+                new disable
+                related enable
+            }
+        }
+        rule 2 {
+            action drop
+            description NetworkGroup
+            destination {
+                group {
+                    network-group LOCAL
+                }
+            }
+            log disable
+            protocol all
+        }
+        rule 3 {
+            action drop
+            application {
+                category TopSites-Adult
+            }
+            description "KCA - Block Bad sites"
+            log disable
+            protocol ah
+        }
+    }
+    name KCA_to_LOCAL {
+        default-action drop
+        description "KCA_to_LOCAL_RTR (LOCAL)"
+        rule 10 {
+            action accept
+            description "Allow DHCP"
+            destination {
+                port 67
+            }
+            log enable
+            protocol udp
+        }
+        rule 20 {
+            action accept
+            description Established
+            log disable
+            protocol all
+            state {
+                established enable
+                invalid disable
+                new disable
+                related enable
+            }
+        }
+        rule 30 {
+            action accept
+            description "Allow DNS"
+            destination {
+                port 53
+            }
+            log enable
+            protocol tcp_udp
+        }
+    }
+    name KCA_to_OTHER_VLANs {
+        default-action accept
+        description "KCA_to_OTHER_VLANs (IN)"
+        rule 1 {
+            action accept
+            description Established
+            log enable
+            protocol all
+            state {
+                established enable
+                invalid disable
+                new disable
+                related enable
+            }
+        }
+        rule 2 {
+            action drop
+            description NetworkGroup
+            destination {
+                group {
+                    network-group LOCAL
+                }
+            }
+            log disable
+            protocol all
+        }
+        rule 3 {
+            action drop
+            application {
+                category TopSites-Adult
+            }
+            description "KCA - Block Bad sites"
+            log disable
+            protocol ah
+        }
+    }
+    name WAN2_IN {
+        default-action drop
+        description "WAN to internal"
+        rule 10 {
+            action accept
+            description "Allow established/related"
+            state {
+                established enable
+                related enable
+            }
+        }
+        rule 20 {
+            action drop
+            description "Drop invalid state"
+            state {
+                invalid enable
+            }
+        }
+    }
+    name WAN2_LOCAL {
+        default-action drop
+        description "WAN to router"
+        rule 10 {
+            action accept
+            description "Allow established/related"
+            state {
+                established enable
+                related enable
+            }
+        }
+        rule 20 {
+            action drop
+            description "Drop invalid state"
+            state {
+                invalid enable
+            }
+        }
+    }
+    name WAN_IN {
+        default-action drop
+        description "WAN to internal"
+        rule 10 {
+            action accept
+            description "Allow established/related"
+            state {
+                established enable
+                related enable
+            }
+        }
+        rule 20 {
+            action drop
+            description "Drop invalid state"
+            state {
+                invalid enable
+            }
+        }
+    }
+    name WAN_LOCAL {
+        default-action drop
+        description "WAN to router"
+        rule 10 {
+            action accept
+            description "Accept WAN requests to 443 on Unity Access 10.200.117.224"
+            destination {
+                address 10.200.117.224
+                port 443
+            }
+            log enable
+            protocol tcp
+            state {
+                established enable
+                invalid disable
+                new enable
+                related disable
+            }
+        }
+        rule 30 {
+            action accept
+            description "Allow established/related"
+            state {
+                established enable
+                related enable
+            }
+        }
+        rule 40 {
+            action drop
+            description "Drop invalid state"
+            state {
+                invalid enable
+            }
+        }
+    }
+    receive-redirects disable
+    send-redirects enable
+    source-validation disable
+    syn-cookies enable
+}
+interfaces {
+    ethernet eth0 {
+        address 68.111.0.2/30
+        description "Eth0 - Internet Primary Circuit"
+        duplex auto
+        firewall {
+            in {
+                name WAN_IN
+            }
+            local {
+                name WAN_LOCAL
+            }
+        }
+        speed auto
+    }
+    ethernet eth1 {
+        address dhcp
+        description "Eth1 - Internet Secondary Cicuit"
+        duplex auto
+        firewall {
+            in {
+                name WAN2_IN
+            }
+            local {
+                name WAN2_LOCAL
+            }
+        }
+        speed auto
+    }
+    ethernet eth2 {
+        address 192.168.2.1/24
+        description "Eth2 - LiveStream-Port"
+        duplex auto
+        firewall {
+            in {
+                modify balance
+            }
+        }
+        speed auto
+    }
+    ethernet eth3 {
+        address 192.168.199.1/24
+        duplex auto
+        firewall {
+            in {
+                name Atarashii_to_OTHER_VLANs
+            }
+            local {
+                name Atarashii_to_LOCAL
+            }
+        }
+        ip {
+            enable-proxy-arp
+        }
+        speed auto
+    }
+    ethernet eth4 {
+        duplex auto
+        speed auto
+    }
+    ethernet eth5 {
+        duplex auto
+        speed auto
+    }
+    ethernet eth6 {
+        address 10.110.0.81/20
+        description Eth6_Temp_Guest
+        duplex auto
+        firewall {
+            in {
+                modify balance
+            }
+        }
+        speed auto
+    }
+    ethernet eth7 {
+        address 192.168.5.10/24
+        description "Eth7 - "
+        duplex auto
+        firewall {
+            in {
+                modify balance
+            }
+        }
+        speed auto
+        vif 6 {
+            address 192.168.6.1/25
+            description MigrateUnifiController
+            mtu 1500
+        }
+        vif 13 {
+            description "LiveStream-V13 192.168.13.1/28"
+        }
+        vif 14 {
+            address 192.168.14.1/29
+            description PointOfSaleAuxGuest
+            firewall {
+                in {
+                }
+                local {
+                    name GUEST_to_LOCAL
+                }
+            }
+            mtu 1500
+        }
+        vif 15 {
+            address 192.168.15.1/29
+            description PointOfSale
+            mtu 1500
+        }
+        vif 16 {
+            address 192.168.16.1/28
+            description "OpenWRT_WAPs-V16 	192.168.16.0/28"
+            mtu 1500
+        }
+        vif 20 {
+            description "NetworkManagement-V20 192.168.20.1/26"
+            ip {
+                enable-proxy-arp
+            }
+        }
+        vif 30 {
+            address 192.168.30.1/23
+            description "Production-V30 192.168.30.1/23"
+            ip {
+                enable-proxy-arp
+            }
+        }
+        vif 100 {
+            address 192.168.10.1/24
+            description "OfficeMain-V100 192.168.100.1/25"
+            ip {
+                enable-proxy-arp
+            }
+        }
+        vif 101 {
+            address 192.168.101.1/27
+            description "OfficeTelephone-V101 192.168.101.1/27"
+        }
+        vif 102 {
+            address 192.168.102.1/26
+            description Security
+            mtu 1500
+        }
+        vif 103 {
+            address 192.168.103.1/26
+            description HVAC-V103
+            firewall {
+                in {
+                    name HVAC_to_OTHER_VLANs
+                }
+                local {
+                    name HVAC_to_LOCAL
+                }
+            }
+            mtu 1500
+        }
+        vif 175 {
+            description "vlan0175 Security Cameras (w/o DHCP) v175"
+            mtu 1500
+        }
+        vif 198 {
+            address 192.168.198.1/24
+            description Kiosk
+            firewall {
+                in {
+                }
+                local {
+                    name GUEST_to_LOCAL
+                }
+            }
+            mtu 1500
+        }
+        vif 200 {
+            address 10.200.112.1/20
+            description "Guest-V200 10.200.112.1/20"
+            firewall {
+                in {
+                }
+                local {
+                    name GUEST_to_LOCAL
+                }
+            }
+            ip {
+                enable-proxy-arp
+            }
+        }
+        vif 235 {
+            address 192.168.235.99/24
+            description v235-CiscoWAP
+            mtu 1500
+        }
+        vif 300 {
+            address 10.30.24.1/21
+            description KCA-V300
+            firewall {
+                in {
+                    name KCA_to_OTHER_VLANs
+                }
+                local {
+                    name KCA_to_LOCAL
+                }
+            }
+            mtu 1500
+        }
+    }
+    loopback lo {
+    }
+}
+load-balance {
+    group G {
+        interface eth0 {
+        }
+        interface eth1 {
+            failover-only
+        }
+        lb-local enable
+        lb-local-metric-change disable
+    }
+}
+port-forward {
+    auto-firewall enable
+    hairpin-nat enable
+    lan-interface eth7
+    rule 1 {
+        description "ACM Port Forwarding"
+        forward-to {
+            address 10.200.117.224
+            port 443
+        }
+        original-port 443
+        protocol tcp
+    }
+    rule 2 {
+        description ""
+        forward-to {
+            address 10.200.117.224
+            port 80
+        }
+        original-port 80
+        protocol tcp
+    }
+    wan-interface eth0
+}
+protocols {
+    static {
+    }
+}
+service {
+    dhcp-server {
+        disabled false
+        hostfile-update disable
+        shared-network-name Eth1 {
+            authoritative disable
+            subnet 192.168.1.0/24 {
+                default-router 192.168.1.1
+                lease 86400
+                start 192.168.1.38 {
+                    stop 192.168.1.243
+                }
+            }
+        }
+        shared-network-name Eth1_Eth1 {
+            authoritative disable
+            subnet 192.168.234.0/27 {
+                default-router 192.168.234.1
+                lease 86400
+                start 192.168.234.1 {
+                    stop 192.168.234.30
+                }
+            }
+        }
+        shared-network-name Eth2-StreamingPC {
+            authoritative disable
+            subnet 192.168.2.0/26 {
+                default-router 192.168.2.1
+                dns-server 1.1.1.3
+                dns-server 1.0.0.3
+                lease 86400
+                start 192.168.2.1 {
+                    stop 192.168.2.62
+                }
+                static-mapping LAOEncoder {
+                    ip-address 192.168.2.2
+                    mac-address 1c:69:7a:68:4d:78
+                }
+                static-mapping LAOEncoderResi2Ubottom {
+                    ip-address 192.168.2.5
+                    mac-address 7c:c2:55:67:f2:17
+                }
+                static-mapping LAOEncoderResi2Utop {
+                    ip-address 192.168.2.4
+                    mac-address 7c:c2:55:67:f2:16
+                }
+                static-mapping ResiEncoder2U {
+                    ip-address 192.168.2.3
+                    mac-address 7c:c2:55:60:11:c1
+                }
+                unifi-controller 192.168.5.49
+            }
+        }
+        shared-network-name Eth6 {
+            authoritative disable
+            subnet 10.110.0.0/20 {
+                default-router 10.110.0.81
+                dns-server 1.1.1.3
+                dns-server 1.0.0.3
+                lease 86400
+                start 10.110.0.85 {
+                    stop 10.110.0.244
+                }
+            }
+        }
+        shared-network-name Guest-V200 {
+            authoritative disable
+            subnet 10.200.112.0/20 {
+                default-router 10.200.112.1
+                dns-server 1.1.1.3
+                dns-server 1.0.0.3
+                lease 21600
+                start 10.200.112.11 {
+                    stop 10.200.127.245
+                }
+                static-mapping CiscoWAP {
+                    ip-address 10.200.127.199
+                    mac-address 20:aa:4b:15:18:32
+                }
+                static-mapping hiraku-mon {
+                    ip-address 10.200.117.224
+                    mac-address b4:96:91:e0:b4:81
+                }
+                unifi-controller 192.168.5.49
+            }
+        }
+        shared-network-name HVAC-V103 {
+            authoritative disable
+            subnet 192.168.103.0/26 {
+                default-router 192.168.103.1
+                dns-server 1.1.1.3
+                dns-server 1.0.0.3
+                lease 86400
+                start 192.168.103.2 {
+                    stop 192.168.103.62
+                }
+            }
+        }
+        shared-network-name KCA-V300 {
+            authoritative disable
+            subnet 10.30.24.0/21 {
+                default-router 10.30.24.1
+                dns-server 1.1.1.3
+                dns-server 1.0.0.3
+                lease 86400
+                start 10.30.24.2 {
+                    stop 10.30.31.254
+                }
+                static-mapping Canon1C0318 {
+                    ip-address 10.30.31.233
+                    mac-address 2c:9e:fc:1c:03:18
+                }
+                static-mapping Canone95e9a {
+                    ip-address 10.30.31.215
+                    mac-address f4:81:39:e9:5e:9a
+                }
+                static-mapping RingDoorbell-40 {
+                    ip-address 10.30.31.125
+                    mac-address 9c:76:13:7f:86:40
+                }
+                unifi-controller 192.168.5.49
+            }
+        }
+        shared-network-name Kiosk {
+            authoritative disable
+            subnet 192.168.198.0/24 {
+                default-router 192.168.198.1
+                dns-server 1.1.1.3
+                dns-server 1.0.0.3
+                lease 86400
+                start 192.168.198.2 {
+                    stop 192.168.198.250
+                }
+                unifi-controller 192.168.5.49
+            }
+        }
+        shared-network-name LAN_ALL {
+            authoritative disable
+            subnet 192.168.5.0/24 {
+                default-router 192.168.5.10
+                dns-server 1.1.1.3
+                dns-server 1.0.0.3
+                lease 10800
+                start 192.168.5.49 {
+                    stop 192.168.5.254
+                }
+                static-mapping 1MaybeHPProCurveSwitch {
+                    ip-address 192.168.5.254
+                    mac-address 00:1f:28:79:ab:c0
+                }
+                static-mapping 1-Netg52TP-35DF {
+                    ip-address 192.168.5.108
+                    mac-address c4:04:15:94:35:df
+                }
+                static-mapping 2MaybeHPProCurveSwitch {
+                    ip-address 192.168.5.253
+                    mac-address 00:1f:28:79:ab:ff
+                }
+                static-mapping 2-UnifiSW-5412 {
+                    ip-address 192.168.5.51
+                    mac-address 74:83:c2:f9:54:12
+                }
+                static-mapping 3rdFloorSw {
+                    ip-address 192.168.5.249
+                    mac-address 80:37:73:fa:6b:93
+                }
+                static-mapping 3rd-Netg48T-FDF5 {
+                    ip-address 192.168.5.114
+                    mac-address 10:0d:7f:b5:fd:f5
+                }
+                static-mapping 4-UnifiSW-A9DB {
+                    ip-address 192.168.5.88
+                    mac-address 74:83:c2:0f:a9:db
+                }
+                static-mapping 5-Netg28TP-925F {
+                    ip-address 192.168.5.110
+                    mac-address c4:04:15:a1:92:5f
+                }
+                static-mapping ClydeS {
+                    ip-address 192.168.5.49
+                    mac-address 9c:8e:99:de:aa:1f
+                }
+                static-mapping NetworkCloset-UACpro {
+                    ip-address 192.168.5.52
+                    mac-address b4:fb:e4:d6:17:ba
+                }
+                static-mapping Office-UACpro {
+                    ip-address 192.168.5.54
+                    mac-address b4:fb:e4:d6:1a:4b
+                }
+                static-mapping OfficeS24H-8601 {
+                    ip-address 192.168.5.55
+                    mac-address 90:A7:C1:C5:86:01
+                }
+                static-mapping RingoBingo {
+                    ip-address 192.168.5.50
+                    mac-address 10:9a:dd:45:8b:a8
+                }
+                static-mapping Soundbooth-UACPro {
+                    ip-address 192.168.5.53
+                    mac-address b4:fb:e4:d6:17:59
+                }
+                unifi-controller 192.168.5.49
+            }
+        }
+        shared-network-name OfficeMain-V100 {
+            authoritative disable
+            subnet 192.168.10.0/24 {
+                default-router 192.168.10.1
+                dns-server 1.1.1.3
+                dns-server 1.0.0.3
+                lease 32499
+                start 192.168.10.2 {
+                    stop 192.168.10.253
+                }
+                static-mapping CanonBCF15D {
+                    ip-address 192.168.10.222
+                    mac-address 6c:3c:7c:bc:f1:5d
+                }
+                static-mapping Canon_-_Digital_Press {
+                    ip-address 192.168.10.75
+                    mac-address a0:42:3f:3b:f5:e7
+                }
+                static-mapping Polycom_64167f91a547 {
+                    ip-address 192.168.10.13
+                    mac-address 64:16:7f:91:a5:47
+                }
+                static-mapping Polycom_64167f93bcc5 {
+                    ip-address 192.168.10.9
+                    mac-address 64:16:7f:93:bc:c5
+                }
+                static-mapping Polycom_64167f93bda4 {
+                    ip-address 192.168.10.11
+                    mac-address 64:16:7f:93:bd:a4
+                }
+                static-mapping Polycom_64167f93bdd0 {
+                    ip-address 192.168.10.16
+                    mac-address 64:16:7f:93:bd:d0
+                }
+                static-mapping Polycom_64167f93bf38 {
+                    ip-address 192.168.10.19
+                    mac-address 64:16:7f:93:bf:38
+                }
+                static-mapping Polycom_64167f93bf43 {
+                    ip-address 192.168.10.4
+                    mac-address 64:16:7f:93:bf:43
+                }
+                static-mapping Polycom_64167f93bf48 {
+                    ip-address 192.168.10.14
+                    mac-address 64:16:7f:93:bf:48
+                }
+                static-mapping Polycom_64167f938a3f {
+                    ip-address 192.168.10.7
+                    mac-address 64:16:7f:93:8a:3f
+                }
+                static-mapping Polycom_64167f938ba9 {
+                    ip-address 192.168.10.5
+                    mac-address 64:16:7f:93:8b:a9
+                }
+                static-mapping Polycom_64167f9387a2 {
+                    ip-address 192.168.10.15
+                    mac-address 64:16:7f:93:87:a2
+                }
+                static-mapping Polycom_64167f93977d {
+                    ip-address 192.168.10.8
+                    mac-address 64:16:7f:93:97:7d
+                }
+                static-mapping Polycom_64167f938776 {
+                    ip-address 192.168.10.6
+                    mac-address 64:16:7f:93:87:76
+                }
+                static-mapping Preschool_Xerox_XC-B8CF0A {
+                    ip-address 192.168.10.66
+                    mac-address 9c:93:4e:b8:cf:0a
+                }
+                static-mapping RingoBingo-wl {
+                    ip-address 192.168.10.28
+                    mac-address C8:BC:C8:E5:C9:7E
+                }
+                static-mapping RoxyBananaiPhone {
+                    ip-address 192.168.10.25
+                    mac-address 00:23:69:ba:44:f7
+                }
+                static-mapping ShenzhenBaichuanNVR {
+                    ip-address 192.168.10.232
+                    mac-address ec:71:db:9d:5f:0c
+                }
+                static-mapping Tridium {
+                    ip-address 192.168.10.20
+                    mac-address 38:0b:3c:7f:62:bb
+                }
+                static-mapping UAP-1 {
+                    ip-address 192.168.10.46
+                    mac-address B4:FB:E4:D6:17:59
+                }
+                static-mapping UAP-2 {
+                    ip-address 192.168.10.47
+                    mac-address B4:FB:E4:D6:17:BA
+                }
+                static-mapping UAP-3 {
+                    ip-address 192.168.10.48
+                    mac-address B4:FB:E4:D6:1A:4B
+                }
+                static-mapping UAP-4 {
+                    ip-address 192.168.10.49
+                    mac-address B4:FB:E4:D6:19:11
+                }
+                static-mapping UAP-5 {
+                    ip-address 192.168.10.50
+                    mac-address B4:FB:E4:D6:18:CF
+                }
+                unifi-controller 192.168.5.49
+            }
+        }
+        shared-network-name OfficeTelephone-V101 {
+            authoritative disable
+            subnet 192.168.101.0/27 {
+                default-router 192.168.101.1
+                dns-server 1.1.1.3
+                dns-server 1.0.0.3
+                lease 86400
+                start 192.168.101.2 {
+                    stop 192.168.101.30
+                }
+                static-mapping 150_Preschool_Shawna_PHONE64167F9387A2 {
+                    ip-address 192.168.101.27
+                    mac-address 64:16:7F:93:87:A2
+                }
+                static-mapping 209_Pastor_John_PHONE64167F93BCC0 {
+                    ip-address 192.168.101.30
+                    mac-address 64:16:7F:93:BC:C0
+                }
+                static-mapping 210_AJ_PHONE64167F93BF38 {
+                    ip-address 192.168.101.20
+                    mac-address 64:16:7F:93:BF:38
+                }
+                static-mapping 211_Christine_PHONE64167F93446E {
+                    ip-address 192.168.101.17
+                    mac-address 64:16:7F:93:44:6E
+                }
+                static-mapping 213_Lincoln_PHONE64167F91A547 {
+                    ip-address 192.168.101.29
+                    mac-address 64:16:7F:91:A5:47
+                }
+                static-mapping 214_EmptyOffice_PHONE64167F93BDA4 {
+                    ip-address 192.168.101.22
+                    mac-address 64:16:7F:93:BD:A4
+                }
+                static-mapping 215_Mattie_PHONE64167F93BF43 {
+                    ip-address 192.168.101.19
+                    mac-address 64:16:7F:93:BF:43
+                }
+                static-mapping 216_Jordyn_PHONE64167F93977D {
+                    ip-address 192.168.101.24
+                    mac-address 64:16:7F:93:97:7D
+                }
+                static-mapping 217_Reception_PHONE64167F938776 {
+                    ip-address 192.168.101.28
+                    mac-address 64:16:7F:93:87:76
+                }
+                static-mapping 220_Alex_PHONE64167F938BA9 {
+                    ip-address 192.168.101.25
+                    mac-address 64:16:7F:93:8B:A9
+                }
+                static-mapping 221_Mike_PHONE64167F93BCC5 {
+                    ip-address 192.168.101.23
+                    mac-address 64:16:7F:93:BC:C5
+                }
+                static-mapping 222_Andy_PHONE64167F93BDD0 {
+                    ip-address 192.168.101.21
+                    mac-address 64:16:7F:93:BD:D0
+                }
+                static-mapping 224_Dustin_PHONE64167F93BF48 {
+                    ip-address 192.168.101.18
+                    mac-address 64:16:7F:93:BF:48
+                }
+                static-mapping 251_Lobby_PHONE64167F938A3F {
+                    ip-address 192.168.101.26
+                    mac-address 64:16:7F:93:8A:3F
+                }
+                unifi-controller 192.168.5.49
+            }
+        }
+        shared-network-name OpenWRT_WAPs-V16 {
+            authoritative disable
+            subnet 192.168.16.0/28 {
+                default-router 192.168.16.1
+                dns-server 1.1.1.3
+                dns-server 1.0.0.3
+                lease 86400
+                start 192.168.16.1 {
+                    stop 192.168.16.14
+                }
+                static-mapping OM2P-LC-9F88 {
+                    ip-address 192.168.16.2
+                    mac-address AC:86:74:12:9F:88
+                }
+            }
+        }
+        shared-network-name PointOfSale {
+            authoritative disable
+            subnet 192.168.15.0/29 {
+                default-router 192.168.15.1
+                dns-server 1.1.1.3
+                dns-server 1.0.0.3
+                lease 86400
+                start 192.168.15.1 {
+                    stop 192.168.15.6
+                }
+            }
+        }
+        shared-network-name PointOfSaleAuxGuest {
+            authoritative disable
+            subnet 192.168.14.0/29 {
+                default-router 192.168.14.1
+                dns-server 1.1.1.3
+                dns-server 1.0.0.3
+                lease 86400
+                start 192.168.14.1 {
+                    stop 192.168.14.6
+                }
+            }
+        }
+        shared-network-name Production-V30 {
+            authoritative disable
+            subnet 192.168.30.0/23 {
+                default-router 192.168.30.1
+                dns-server 1.1.1.3
+                dns-server 1.0.0.3
+                lease 86400
+                start 192.168.30.2 {
+                    stop 192.168.31.254
+                }
+                static-mapping ATEMConsteSwitch {
+                    ip-address 192.168.30.14
+                    mac-address 7c:2e:0d:a5:ea:eb
+                }
+                static-mapping ATEMswitch-Mac {
+                    ip-address 192.168.30.4
+                    mac-address 3c:07:54:3c:d8:86
+                }
+                static-mapping ATEM-Switch-2 {
+                    ip-address 192.168.30.12
+                    mac-address 7c:2e:0d:a3:b8:d1
+                }
+                static-mapping ATEM_DECK {
+                    ip-address 192.168.30.13
+                    mac-address 7c:2e:0d:02:e4:93
+                }
+                static-mapping AtemSwitcherMac {
+                    ip-address 192.168.30.72
+                    mac-address f0:18:98:e8:f9:92
+                }
+                static-mapping BIGTOWER {
+                    ip-address 192.168.30.67
+                    mac-address 00:1f:bc:11:9d:23
+                }
+                static-mapping DESKTOP-T5BSCO6_Announcements-PowerPoint {
+                    ip-address 192.168.30.9
+                    mac-address f4:4d:30:e2:9c:8e
+                }
+                static-mapping OnlineGraphics {
+                    ip-address 192.168.31.180
+                    mac-address 38:f9:d3:14:5f:59
+                }
+                static-mapping Parkways-iMac-2_DMX-Controller {
+                    ip-address 192.168.30.6
+                    mac-address 3c:07:54:3a:9a:45
+                }
+                static-mapping Presenters-iMac_ProPresenter-Lyrics {
+                    ip-address 192.168.30.8
+                    mac-address 68:5b:35:b8:f4:43
+                }
+                static-mapping Soundbooth-iPad {
+                    ip-address 192.168.30.10
+                    mac-address dc:86:d8:ec:3c:e7
+                }
+                static-mapping Stage_Glens-iPad {
+                    ip-address 192.168.30.11
+                    mac-address bc:3b:af:cf:cd:50
+                }
+                static-mapping Videos-Mac-Pro_ProPresenter-Main {
+                    ip-address 192.168.30.7
+                    mac-address 00:3e:e1:c1:f8:9f
+                }
+                static-mapping WING-Sanctuary {
+                    ip-address 192.168.30.2
+                    mac-address 00:15:64:07:12:d6
+                }
+                static-mapping WING-PP-29111245 {
+                    ip-address 192.168.30.3
+                    mac-address 00:15:64:06:c2:40
+                }
+                static-mapping X32_Soundboard {
+                    ip-address 192.168.30.5
+                    mac-address 00:15:64:02:4f:ec
+                }
+                unifi-controller 192.168.5.49
+            }
+        }
+        shared-network-name Security-V102 {
+            authoritative disable
+            subnet 192.168.102.0/26 {
+                default-router 192.168.102.1
+                lease 86400
+                start 192.168.102.1 {
+                    stop 192.168.102.62
+                }
+            }
+        }
+        shared-network-name eth3_devcom {
+            authoritative disable
+            subnet 192.168.199.0/28 {
+                default-router 192.168.199.1
+                dns-server 1.1.1.3
+                dns-server 1.0.0.3
+                lease 86400
+                start 192.168.199.2 {
+                    stop 192.168.199.14
+                }
+            }
+        }
+        static-arp disable
+        use-dnsmasq disable
+    }
+    dns {
+        forwarding {
+            cache-size 500
+            listen-on eth1
+            listen-on eth2
+            listen-on eth7
+            listen-on eth7.13
+            listen-on eth7.20
+            listen-on eth7.30
+            listen-on eth7.100
+            listen-on eth7.101
+            listen-on eth7.200
+            listen-on eth3
+            listen-on eth4
+            listen-on eth5
+            listen-on eth7.300
+            name-server 1.1.1.3
+            name-server 1.0.0.3
+            options address=/doors.parkwayroanoke.local/10.200.117.224
+        }
+    }
+    gui {
+        http-port 80
+        https-port 443
+        older-ciphers enable
+    }
+    nat {
+        rule 5010 {
+            description "masquerade for WAN"
+            outbound-interface eth0
+            type masquerade
+        }
+        rule 5011 {
+            description "masquerade for WAN2"
+            log disable
+            outbound-interface eth1
+            protocol all
+            type masquerade
+        }
+    }
+    ssh {
+        port 22
+        protocol-version v2
+    }
+    unms {
+        disable
+    }
+}
+system {
+    gateway-address 68.111.0.1
+    host-name Hillstop
+    ipv6 {
+        disable
+        disable-forwarding
+    }
+    login {
+        user ParkwayRoanoke {
+            authentication {
+                encrypted-password $6$qeCr2Wqc5L7$frdEH.oSyL8zdaSmD3liRLayNn.gA5iRhwjDLx7jykR.1SqZsSg2PvKhMg2k5k3n6a4Gd2rR262mnxWWpsfXt1
+                plaintext-password ""
+            }
+            level operator
+        }
+        user ParkwayTech {
+            authentication {
+                encrypted-password $6$LfItY6Wd$8aE5Uj4S5UI.cGiQ8PRupLOn5J7cJ405XfAD/ylLViKwStU67GkgnW8tMbKDTFjhWYzea2PR7ikPZfRSzwIxu/
+                plaintext-password ""
+            }
+            level admin
+        }
+        user TimC {
+            authentication {
+                encrypted-password $6$PqOPaQr0M$4xbhKCnEs5p5RcyughVQ3rie6.d8vejNjRSRSzg8f1o4a2F2u1E7XxrQQ8WIDfoMzi3qgN0JuDne7B6IHnRGa0
+                plaintext-password ""
+            }
+            level admin
+        }
+    }
+    name-server 1.1.1.1
+    name-server 1.0.0.3
+    ntp {
+        server 0.ubnt.pool.ntp.org {
+        }
+        server 1.ubnt.pool.ntp.org {
+        }
+        server 2.ubnt.pool.ntp.org {
+        }
+        server 3.ubnt.pool.ntp.org {
+        }
+    }
+    offload {
+        hwnat disable
+        ipsec enable
+        ipv4 {
+            forwarding enable
+            gre enable
+            pppoe enable
+            vlan enable
+        }
+        ipv6 {
+            forwarding enable
+            pppoe enable
+        }
+    }
+    static-host-mapping {
+        host-name avigilon.parkwayroanoke.com {
+            alias avigilon
+            inet 10.200.117.224
+        }
+        host-name doors.parkwayroanoke.com {
+            alias doors
+            inet 10.200.117.224
+        }
+        host-name unityaccess.parkwayroanoke.com {
+            alias unityaccess
+            inet 10.200.117.224
+        }
+    }
+    syslog {
+        global {
+            facility all {
+                level notice
+            }
+            facility protocols {
+                level debug
+            }
+        }
+    }
+    time-zone America/New_York
+    traffic-analysis {
+        dpi disable
+        export disable
+    }
+}
+
+
+/* Warning: Do not remove the following line. */
+/* === vyatta-config-version: "config-management@1:conntrack@1:cron@1:dhcp-relay@1:dhcp-server@4:firewall@5:ipsec@5:nat@3:qos@1:quagga@2:suspend@1:system@4:ubnt-pptp@1:ubnt-udapi-server@1:ubnt-unms@1:ubnt-util@1:vrrp@1:webgui@1:webproxy@1:zone-policy@1" === */
+/* Release version: v1.10.11.5274249.200221.0850 */
